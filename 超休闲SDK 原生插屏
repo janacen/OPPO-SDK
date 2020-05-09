@@ -1,0 +1,99 @@
+ public static NativeAd mNativeAd;
+    private INativeAdData mINativeAdData;
+    private String nativeId = "179546";
+    private AQuery mAQuery;
+    private View adView;
+    private AbsoluteLayout gameContainer;
+
+    public void createNativeAd(){
+        initView();
+        initData_native();
+    }
+
+    private void initView() {
+        mAQuery = new AQuery(this);
+    }
+
+    boolean isAddAdView = false;
+    private void initData_native() {
+        gameContainer = (GameEngine.getInstance().mLayaGameEngine.getAbsLayout());
+        LayoutInflater inflater= LayoutInflater.from(MainActivity.this);
+        adView = inflater.inflate(R.layout.activity_native_text_img_640_320,null);
+
+        mNativeAd = new NativeAd(this, nativeId, new INativeAdListener() {
+            @Override
+            public void onAdSuccess(List iNativeAdDataList) {
+                if(isAddAdView==false){
+                    gameContainer.addView(adView);
+                    isAddAdView = true;
+                }
+                else {
+                    adView.setVisibility(View.VISIBLE);
+                }
+
+                if (null != iNativeAdDataList && iNativeAdDataList.size() > 0) {
+                  //  Toast.makeText(MainActivity.this, "加载原生广告成功", Toast.LENGTH_SHORT).show();
+
+                    mINativeAdData = (INativeAdData) iNativeAdDataList.get(0);
+
+                    if(null != mINativeAdData && mINativeAdData.isAdValid()){
+                        updateNativeAd();
+                        bannerView.setVisibility(bannerView.INVISIBLE);
+                    }
+                }
+            }
+
+            @Override
+            public void onAdFailed(NativeAdError nativeAdError) {
+
+            }
+
+            @Override
+            public void onAdError(NativeAdError nativeAdError, INativeAdData iNativeAdData) {
+
+            }
+        });
+    }
+
+    void updateNativeAd(){
+        mAQuery.id(R.id.show_native_ad_bn).visibility(View.INVISIBLE);
+        mAQuery.id(R.id.load_native_ad_bn).visibility(View.INVISIBLE);
+        //title
+        mAQuery.id(R.id.title_tv).text(mINativeAdData.getTitle());
+        //desc
+        mAQuery.id(R.id.desc_tv).text(mINativeAdData.getDesc());
+        //img
+        mAQuery.id(R.id.img_iv).image(mINativeAdData.getImgFiles().get(0).getUrl()).clicked(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                /**
+                 *原生广告被点击时必须调用onAdClick方法通知SDK进行点击统计；
+                 * 注意：onAdClick方法必须在onAdShow方法之后再调用才有效，否则是无效点击。
+                 */
+                mINativeAdData.onAdClick(v);
+            }
+        });
+
+        //close
+        mAQuery.id(R.id.close_iv).clicked(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                adView.setVisibility(View.GONE);
+                bannerView.setVisibility(bannerView.VISIBLE);
+            }
+        });
+        //click
+        mAQuery.id(R.id.click_bn).text(null != mINativeAdData.getClickBnText() ? mINativeAdData.getClickBnText() : "").clicked(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                /**
+                 *原生广告被点击时必须调用onAdClick方法通知SDK进行点击统计；
+                 * 注意：onAdClick方法必须在onAdShow方法之后再调用才有效，否则是无效点击。
+                 */
+                mINativeAdData.onAdClick(v);
+            }
+        });
+
+        //原生广告曝光时必须调用onAdShow方法通知SDK进行曝光统计，否则就没有曝光数据。
+        mINativeAdData.onAdShow(adView);
+    }
